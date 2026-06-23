@@ -7,11 +7,9 @@ Bundles the MajorDTF skill **and** the hosted MCP tools (`prep_artwork`, `vector
 ## Install
 
 ```
-/plugin marketplace add pablodelmoral/majordtf-mcp
+/plugin marketplace add pablodelmoral/Majordtf-MCP
 /plugin install majordtf
 ```
-
-(Replace `pablodelmoral/majordtf-mcp` with wherever you publish this repo.)
 
 ## Set your API key
 
