@@ -1,8 +1,8 @@
 # MajorDTF — Claude Code plugin
 
-Prep, vectorize, and recolor artwork for DTF/transfer printing, right inside Claude Code.
-Bundles the MajorDTF skill **and** the hosted MCP tools (`prep_artwork`, `vectorize_artwork`,
-`recolor_artwork`).
+Prep, vectorize, recolor, and gang-sheet artwork for DTF/transfer printing, right inside Claude
+Code. Bundles the MajorDTF skill **and** the hosted MCP tools (`prep_artwork`,
+`vectorize_artwork`, `recolor_artwork`, `gangsheet_artwork`).
 
 ## Install
 
@@ -30,6 +30,7 @@ the chat. Each tool call costs 1 credit (billed on success only).
 - **prep_artwork** → print-ready 300 DPI transparent DTF PNG
 - **vectorize_artwork** → clean vector SVG (deterministic Image-Trace)
 - **recolor_artwork** → swap colours (e.g. white→black) or tint the whole design
+- **gangsheet_artwork** → prep several logos and lay them onto one 21" sheet (1 credit per logo)
 - the **majordtf** skill, so the agent knows when and how to use them
 
 Docs: <https://www.majordtf.com/docs/mcp>

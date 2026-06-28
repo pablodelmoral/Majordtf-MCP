@@ -1,31 +1,36 @@
 ---
 name: majordtf
-description: Prep, vectorize, or recolor artwork for DTF/transfer printing via majordtf.com — the prep_artwork / vectorize_artwork / recolor_artwork MCP tools or the POST /v1/prep, /v1/vectorize, /v1/recolor HTTP APIs. Use when someone wants a logo/design cleaned, background removed, upscaled, halftoned to a garment colour, traced to a vector SVG, or recolored (e.g. white↔black).
+description: Prep, vectorize, recolor, or gang-sheet artwork for DTF/transfer printing via majordtf.com — the prep_artwork / vectorize_artwork / recolor_artwork / gangsheet_artwork MCP tools, or the POST /v1/prep, /v1/vectorize, /v1/recolor, /v1/gangsheet HTTP APIs. Use when someone wants a logo/design cleaned, background removed, upscaled, halftoned to a garment colour, traced to a vector SVG, recolored (e.g. white↔black), or several logos laid onto one 21" gang sheet.
 ---
 
-# MajorDTF — artwork prep, vectorize & recolor
+# MajorDTF — artwork prep, vectorize, recolor & gang sheet
 
-Three operations on a raw image URL, each returning a clean, signed file URL. Each call costs
-**1 credit** (billed on success only):
+Four operations on an image URL, each returning a clean, signed file URL. Billed **on success
+only**, **1 credit per call** (the gang sheet: 1 credit per logo, quantities free):
 
-- **Prep** → print-ready 300 DPI transparent DTF **PNG** (bg removed, upscaled, edges hardened, sized).
-- **Vectorize** → clean vector **SVG** (deterministic Image-Trace replica, no AI redraw).
-- **Recolor** → swap colours (e.g. white→black) or tint the whole design. Works on a PNG or SVG.
+| Tool | Does | Returns |
+|---|---|---|
+| **prep_artwork** | Background removed, upscaled, edges hardened, sized to print | 300 DPI transparent **PNG** |
+| **vectorize_artwork** | Deterministic Image-Trace of the raster — no AI redraw | clean **SVG** |
+| **recolor_artwork** | Swap a colour (white→black) or tint the whole design | **PNG** or **SVG** |
+| **gangsheet_artwork** | Prep several logos and lay them onto one 21" sheet | gang-sheet **PNG** |
 
-Two ways to call each — same engine, same params:
+Each is reachable two ways, same engine and params:
 
-- **MCP tools** `prep_artwork` / `vectorize_artwork` / `recolor_artwork` — for agents.
-- **HTTP** `POST https://worker.majordtf.com/v1/{prep,vectorize,recolor}` — for scripts/curl.
+- **MCP tools** — for agents: `prep_artwork` / `vectorize_artwork` / `recolor_artwork` / `gangsheet_artwork`.
+- **HTTP** — for scripts/curl: `POST https://worker.majordtf.com/v1/{prep,vectorize,recolor,gangsheet}`.
   Prep also has a CLI wrapper: `pip install majordtf`.
 
 ## Auth
 
 Mint a key at <https://www.majordtf.com/account> → API keys (shown once). Format `mdtf_live_...`.
-Keep it in the client/MCP config as a header — **never paste it into chat**.
+Send it as an `Authorization: Bearer mdtf_live_...` header from your MCP client / curl — keep it in
+config, **never paste it into chat**. If a client can't set headers, pass it as the tool's
+`api_key` argument instead.
 
-## MCP
+## MCP — install
 
-Install in Claude Code (one line):
+One line in Claude Code:
 
 ```bash
 claude mcp add --transport http majordtf https://worker.majordtf.com/mcp/ --header "Authorization: Bearer mdtf_live_..."
@@ -42,37 +47,45 @@ Or in `.mcp.json` (remote, recommended):
 
 Local stdio alternative: `services/mcp/server.py`, reads `MAJORDTF_API_KEY` from env.
 
-Call it:
+## MCP — call
 
-```
+```python
 prep_artwork(
   image_url="https://example.com/logo.png",
-  width_in=11,                 # printed width in inches; height follows the artwork
-  garment_color="#1a1a1a",     # optional — see below
-  thickness_protection=false,  # optional — see below
+  width_in=11,                 # printed width in inches; height follows the art
+  height_in=99,                # only honoured when fit="height" / "contain"
+  fit="width",                 # width (default) | height | contain
+  bg_method="auto",            # auto | key (flat-bg logo) | smart | ai (photo) | keep_alpha
+  garment_color="#1a1a1a",     # shirt hex, keyed out for a clean cutout (omit to keep all colours)
+  halftone=False,              # True → screen the design into dots that fade into garment_color
+  thickness_protection=False,  # 0.5pt garment-colour stroke so thin lines keep their underbase
 )
 # auth is the Authorization header, NOT a tool arg
-# -> { "file_url": "https://…/clean.png", "width": 3300, "height": 4436, ... }
-```
+# -> { "file_url": "https://…/clean.png", "width": 3300, "height": 4436, "format": "png", ... }
 
-If a client can't set headers, pass the key as the `api_key` argument instead.
-
-Vectorize and recolor are sibling tools, same auth:
-
-```
 vectorize_artwork(
   image_url="https://example.com/logo.png",
-  n_colors=24,         # >16 keeps ALL colours (default); <=16 reduces to N flat colours
-  clean_first=true,    # remove the background before tracing
+  n_colors=24,                 # >16 keeps ALL colours (default); <=16 reduces to N flat colours
+  clean_first=True,            # remove the background before tracing
 )
 # -> { "file_url": "https://…/trace.svg", "format": "svg", ... }
 
 recolor_artwork(
   image_url="https://example.com/logo.png",
-  swap_from="#ffffff", swap_to="#000000",   # white -> black (only matched colour changes)
+  swap_from="#ffffff", swap_to="#000000",   # white -> black (only the matched colour changes)
   # ...or tint="#000000" to repaint every opaque pixel one colour
 )
 # -> { "file_url": "https://…/recolor.png", "format": "png", ... }
+
+gangsheet_artwork(
+  items=[
+    { "image_url": "https://example.com/a.png", "width_in": 8, "qty": 3 },
+    { "image_url": "https://example.com/b.png", "width_in": 4, "qty": 2, "bg_method": "key" },
+  ],
+  gap_in=0.25, sheet_width_in=21,
+)
+# each logo prepped, then placed at its width × qty on one 21" sheet (height grows to fit)
+# -> { "file_url": "https://…/gangsheet.png", "logos": 2, "total_pieces": 5, "credits_charged": 2, ... }
 ```
 
 ## HTTP API — prep
@@ -96,10 +109,12 @@ curl -X POST https://worker.majordtf.com/v1/prep \
 | `image_url` | string | Public source URL (PNG/JPG/WEBP). Either this or `image_data`. |
 | `image_data` | string | Base64 data URL, instead of `image_url`. |
 | `print_width_in` | number | **Required.** Printed width in inches. (MCP arg: `width_in`.) |
-| `print_height_in` | number | Default 99. Use with `fit:"height"` to size by height instead. |
+| `print_height_in` | number | Default 99. Use with `fit:"height"` to size by height. (MCP arg: `height_in`.) |
 | `fit` | string | `width` (default) \| `height` \| `contain`. |
-| `garment_colors` | string[] | One hex colour → keyed out + design halftoned to blend into that shirt colour. Omit/none → auto bg-removal, keep every colour. (MCP arg: `garment_color`, single hex.) |
-| `thickness_protection` | boolean | Adds a 0.5 pt garment-colour stroke so thin lines keep their white underbase. Needs exactly one garment colour. |
+| `bg_method` | string | `auto` (default) \| `key` (flat-bg logo) \| `smart` \| `ai` (photo) \| `keep_alpha`. The web Auto/Logo/Smart/Photo art types. |
+| `garment_colors` | string[] | One hex colour = the shirt this prints on, keyed out. Omit → auto bg-removal, keep every colour. (MCP arg: `garment_color`, single hex.) |
+| `halftone_off` | boolean | Default **false** — bare `/v1/prep` with a `garment_colors` value auto-halftones (blends into the shirt). The web app, MCP `prep_artwork`, and CLI default to a clean **knockout** (`halftone_off:true`) and opt into the blend via `halftone` / `--halftone`. |
+| `thickness_protection` | boolean | 0.5 pt garment-colour stroke so thin lines keep their white underbase. Needs exactly one garment colour. |
 | `dpi` | number | Output DPI, default 300. |
 
 ### Response
@@ -129,7 +144,7 @@ curl -X POST https://worker.majordtf.com/v1/prep \
 | 400 | Missing image or print size |
 | 500 | Prep failed (bad/unreadable image) |
 
-Same error codes apply to `/v1/vectorize` and `/v1/recolor`.
+Same error codes apply to `/v1/vectorize`, `/v1/recolor`, and `/v1/gangsheet`.
 
 ## HTTP API — vectorize (raster → SVG)
 
@@ -174,10 +189,40 @@ curl -X POST https://worker.majordtf.com/v1/recolor \
 `tint` repaints everything. The MCP tool takes one `swap_from`/`swap_to` or a `tint`; use the
 HTTP `swaps` array for multiple swaps at once.
 
+## HTTP API — gang sheet (many logos → one 21" sheet)
+
+```bash
+curl -X POST https://worker.majordtf.com/v1/gangsheet \
+  -H "Authorization: Bearer mdtf_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      { "image_url": "https://example.com/a.png", "width_in": 8, "qty": 3 },
+      { "image_url": "https://example.com/b.png", "width_in": 4, "qty": 2, "bg_method": "key" }
+    ],
+    "gap_in": 0.25, "sheet_width_in": 21
+  }'
+# -> { "status": "ok", "file_url": "https://…/gangsheet.png?token=…",
+#      "logos": 2, "total_pieces": 5, "credits_charged": 2, "balance": 38, ... }
+```
+
+| Field | Type | Notes |
+|---|---|---|
+| `items` | array | **Required.** One entry per logo (see item fields below). |
+| `gap_in` | number | Spacing between logos. Default 0.25". |
+| `sheet_width_in` | number | Sheet width. Default 21". |
+| `dpi` | number | Default 300. |
+
+**Item fields:** `image_url` (required), `width_in` (print width, default 11), `qty` (copies,
+default 1), `bg_method` (default `auto`), `garment_color` (hex to knock out, optional),
+`halftone` (bool, default false). Each logo is prepped, then placed at its width × its qty,
+row-packed left→right, sheet height grows to fit. **Charged 1 credit per distinct logo**
+(quantities are free); nothing is charged if the sheet can't be built.
+
 ## Notes
 
-- Billed **on success only**, 1 credit per call (prep, vectorize, or recolor).
+- Billed **on success only**, 1 credit per call (the gang sheet: 1 per logo, quantities free).
 - No `garment_color` = transparent cutout keeping all colours (the common case). Pass one only
-  when the design will press onto that single shirt colour and should fade into it.
+  when the design presses onto that single shirt colour and should fade into it.
 - Practical crisp-print ceiling ≈ 14" @ 300 DPI (upscale input ≤ 4 MP / 4096 px); larger prints
   at ~200 DPI. Source upload ≤ 50 MB.

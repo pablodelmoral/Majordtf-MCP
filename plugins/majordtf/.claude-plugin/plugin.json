@@ -1,8 +1,8 @@
 {
   "name": "majordtf",
-  "version": "1.0.0",
-  "description": "Prep, vectorize, and recolor artwork for DTF/transfer printing via majordtf.com — the prep_artwork / vectorize_artwork / recolor_artwork MCP tools.",
+  "version": "1.1.0",
+  "description": "Prep, vectorize, recolor, and gang-sheet artwork for DTF/transfer printing via majordtf.com — the prep_artwork / vectorize_artwork / recolor_artwork / gangsheet_artwork MCP tools.",
   "author": { "name": "MajorDTF", "url": "https://www.majordtf.com" },
   "homepage": "https://www.majordtf.com/docs/mcp",
-  "keywords": ["dtf", "printing", "artwork", "prep", "vectorize", "recolor", "mcp"]
+  "keywords": ["dtf", "printing", "artwork", "prep", "vectorize", "recolor", "gangsheet", "mcp"]
 }

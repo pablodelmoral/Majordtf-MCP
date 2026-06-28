@@ -5,15 +5,15 @@
     "url": "https://www.majordtf.com"
   },
   "metadata": {
-    "description": "MajorDTF — artwork prep, vectorize & recolor tools for AI agents.",
-    "version": "1.0.0"
+    "description": "MajorDTF — artwork prep, vectorize, recolor & gang-sheet tools for AI agents.",
+    "version": "1.1.0"
   },
   "plugins": [
     {
       "name": "majordtf",
       "source": "./plugins/majordtf",
-      "description": "Prep, vectorize, and recolor artwork for DTF/transfer printing via the MajorDTF MCP server. Bundles the MajorDTF skill + the hosted MCP tools.",
-      "version": "1.0.0",
+      "description": "Prep, vectorize, recolor, and gang-sheet artwork for DTF/transfer printing via the MajorDTF MCP server. Bundles the MajorDTF skill + the hosted MCP tools.",
+      "version": "1.1.0",
       "author": { "name": "MajorDTF", "url": "https://www.majordtf.com" }
     }
   ]
